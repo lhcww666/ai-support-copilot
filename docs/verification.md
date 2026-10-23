@@ -62,8 +62,16 @@ DeepSeek 配置浏览器验证：
 - 登录、文档和运行状态接口均为 HTTP 200；
 - 无 JavaScript 异常，5/5 断言通过。
 
+真实 DeepSeek 联调：
+
+- `runtime` 返回 `llm_mode=langchain-agent`、`llm_provider=deepseek`、
+  `llm_model=deepseek-chat`、`embedding_mode=hash`；
+- RAG 问答使用 `langchain-agent`，`fallback=false`，返回 4 条来源；
+- 订单问题由模型调用 `query_order_status`，回答包含“运输中”；
+- SSE 返回 52 个 `token` 事件和 1 个 `done` 事件；
+- 联调使用临时 SQLite 数据库，结束后已删除。
+
 ## 尚未验证
 
-- 没有配置真实模型 Key，因此 LangChain `create_agent` 的真实供应商工具调用尚未做在线验证；
 - OpenAI Embedding 适配器已实现，当前测试使用离线哈希 Embedding；
 - Docker 镜像需要在 Docker daemon 启动后重新执行构建验证；

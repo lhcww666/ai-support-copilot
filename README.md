@@ -159,7 +159,7 @@ Invoke-RestMethod -Method Post `
 ## Docker
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item .env.deepseek.example .env
 docker compose up --build -d
 docker compose ps
 ```
@@ -183,6 +183,13 @@ docker compose ps
 - 工单草稿、确认和幂等；
 - SSE 事件；
 - 会话隔离和审计日志。
+
+真实 DeepSeek 联调：
+
+- 运行模式为 `langchain-agent`，供应商为 `deepseek`，模型为 `deepseek-chat`；
+- RAG 回答由 DeepSeek 生成，返回 4 条知识来源，未触发规则降级；
+- 订单问题成功调用 `query_order_status` 工具；
+- SSE 返回 52 个 Token 事件和 1 个 `done` 事件。
 
 ## 项目边界
 
