@@ -1,0 +1,28 @@
+services:
+  copilot:
+    build: .
+    container_name: ai-support-copilot
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production
+      APP_SECRET: ${APP_SECRET:-replace-this-secret-before-production}
+      DATABASE_PATH: /app/data/support_copilot.db
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://api.openai.com/v1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
