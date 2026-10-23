@@ -169,6 +169,17 @@ function renderTool(container, call) {
   container.append(card);
 }
 
+function renderToolStart(container, call) {
+  const card = document.createElement('div');
+  card.className = 'tool-card running';
+  const title = document.createElement('strong');
+  title.textContent = `RUNNING · ${call.name}`;
+  const detail = document.createElement('p');
+  detail.textContent = JSON.stringify(call.input, null, 2);
+  card.append(title, detail);
+  container.append(card);
+}
+
 function parseSseBlock(block) {
   let event = 'message';
   const data = [];
@@ -219,6 +230,8 @@ async function sendMessage(rawQuery) {
           messages.scrollTop = messages.scrollHeight;
         } else if (event.event === 'sources') {
           renderSources(shell.sources, event.data);
+        } else if (event.event === 'tool-start') {
+          renderToolStart(shell.tools, event.data);
         } else if (event.event === 'tool') {
           renderTool(shell.tools, event.data);
         } else if (event.event === 'error') {

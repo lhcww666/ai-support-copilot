@@ -113,6 +113,7 @@ input:focus, textarea:focus, select:focus { border-color: rgba(103,228,232,.62);
 .suggestion-grid button { text-align: left; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(124,157,255,.06); color: #b9caea; }
 .sources, .tool-trace { display: grid; gap: 7px; margin-top: 12px; }
 .source-card, .tool-card { padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(3, 10, 21, .4); }
+.tool-card.running { border-color: rgba(103,228,232,.38); box-shadow: inset 3px 0 0 var(--cyan); }
 .source-card strong, .tool-card strong { font-size: 11px; color: #d8e5fa; }
 .source-card p { margin: 5px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .composer { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding-top: 16px; border-top: 1px solid var(--line); }
