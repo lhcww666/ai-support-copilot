@@ -69,7 +69,14 @@ async def test_agent_streams_tool_start_and_result_events(settings):
         TicketService(repository),
     )
     user = User("operator", "客服专员", "operator")
-    prepared = PreparedChat("conv-test", [], [])
+    prepared = PreparedChat(
+        "conv-test",
+        [],
+        [],
+        "查询订单 SO-1001",
+        "查询订单 SO-1001",
+        False,
+    )
 
     class FakeEventAgent:
         async def astream_events(self, _input, *, version):
