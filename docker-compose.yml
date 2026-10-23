@@ -14,11 +14,21 @@ services:
       LLM_MODEL: ${LLM_MODEL:-deepseek-chat}
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0.1}
       LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-900}
-      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
-      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://api.openai.com/v1}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      QUERY_REWRITE_ENABLED: ${QUERY_REWRITE_ENABLED:-true}
+      QUERY_REWRITE_MAX_TOKENS: ${QUERY_REWRITE_MAX_TOKENS:-160}
+      EMBEDDING_PROVIDER: tei
+      EMBEDDING_BASE_URL: http://embedding:80
+      EMBEDDING_MODEL: BAAI/bge-small-zh-v1.5
+      EMBEDDING_DIMENSIONS: 512
+      VECTOR_STORE: pgvector
+      PGVECTOR_DSN: postgresql://copilot:copilot@pgvector:5432/copilot
     volumes:
       - ./data:/app/data
+    depends_on:
+      pgvector:
+        condition: service_healthy
+      embedding:
+        condition: service_started
     healthcheck:
       test:
         - CMD
@@ -29,3 +39,36 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+
+  embedding:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-latest
+    container_name: support-embedding
+    command:
+      - --model-id
+      - BAAI/bge-small-zh-v1.5
+      - --port
+      - "80"
+      - --auto-truncate
+    environment:
+      HF_HOME: /data/huggingface
+    ports:
+      - "8081:80"
+    volumes:
+      - ./data/tei:/data
+
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: support-pgvector
+    environment:
+      POSTGRES_DB: copilot
+      POSTGRES_USER: copilot
+      POSTGRES_PASSWORD: copilot
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./data/pgvector:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U copilot -d copilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
