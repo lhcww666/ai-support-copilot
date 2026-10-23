@@ -224,7 +224,9 @@ async function sendMessage(rawQuery) {
         if (!event) continue;
         if (event.event === 'meta') {
           state.conversationId = event.data.conversation_id;
-          shell.label.textContent = `COPILOT · ${event.data.planner.toUpperCase()}`;
+          shell.label.textContent = event.data.query_rewritten
+            ? `COPILOT · ${event.data.planner.toUpperCase()} · QUERY REWRITTEN`
+            : `COPILOT · ${event.data.planner.toUpperCase()}`;
         } else if (event.event === 'token') {
           shell.text.textContent += event.data.text;
           messages.scrollTop = messages.scrollHeight;
