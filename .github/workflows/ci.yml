@@ -14,6 +14,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      pgvector:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: copilot
+          POSTGRES_USER: copilot
+          POSTGRES_PASSWORD: copilot
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U copilot -d copilot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      PGVECTOR_TEST_DSN: postgresql://copilot:copilot@localhost:5432/copilot
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
