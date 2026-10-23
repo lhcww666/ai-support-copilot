@@ -12,7 +12,7 @@
 ## 自动化测试
 
 ```text
-pytest：23 passed
+pytest：24 passed
 ruff check：通过
 浏览器交互：26/26 通过
 ```
@@ -32,6 +32,7 @@ ruff check：通过
 - 操作审计；
 - LangChain `create_agent` 的模拟工具调用循环；
 - LangChain 流式事件输出与消息去重；
+- LangChain 工具开始与工具结果事件顺序；
 - DeepSeek 与自定义 OpenAI-Compatible 供应商配置解析；
 - RAG 固定评测 10/10。
 
@@ -70,6 +71,15 @@ DeepSeek 配置浏览器验证：
 - 订单问题由模型调用 `query_order_status`，回答包含“运输中”；
 - SSE 返回 52 个 `token` 事件和 1 个 `done` 事件；
 - 联调使用临时 SQLite 数据库，结束后已删除。
+
+实时工具事件验证：
+
+- 真实 DeepSeek 流返回 `tool-start`、`tool`、Token 和 `done`；
+- 事件顺序为 `tool-start -> tool -> token -> done`；
+- 单次订单请求收到 97 个 Token 事件；
+- 浏览器显示 `RUNNING · query_order_status` 和
+  `SUCCESS · query_order_status`；
+- 浏览器 8/8 断言通过，截图保存在 `docs/tool-streaming.png`。
 
 ## 尚未验证
 

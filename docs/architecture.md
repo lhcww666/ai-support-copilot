@@ -42,6 +42,8 @@ app/
   -> create_agent
   -> 模型选择工具
   -> query_order_status / prepare_support_ticket
+  -> on_tool_start 推送 tool-start
+  -> on_tool_end 推送工具结果
   -> astream_events 推送 on_chat_model_stream Token
   -> 模型生成最终回答
 ```

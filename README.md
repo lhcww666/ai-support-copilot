@@ -6,6 +6,8 @@
 
 ![Support Copilot](docs/ui-dashboard.png)
 
+![实时工具调用](docs/tool-streaming.png)
+
 项目面向企业客服场景：用户可以查询知识库、查询订单，并让 Agent 准备工单草稿。
 正式工单必须由用户再次确认，模型不能绕过角色权限和业务校验。
 
@@ -19,11 +21,12 @@
 - LangChain `InMemoryVectorStore` 向量检索
 - 向量相似度 + 关键词重叠的混合重排
 - LangChain 1.x `create_agent` 与 `@tool` 工具调用
+- 工具开始、工具结果和最终回答的实时 SSE 事件顺序
 - 订单状态查询工具
 - 工单草稿工具 + 人工确认 + 数据库幂等
 - 对话历史、消息持久化、操作审计
 - 10 条固定 RAG 检索评测
-- 23 个自动化测试、Ruff 检查和 GitHub Actions
+- 24 个自动化测试、Ruff 检查和 GitHub Actions
 - Docker Compose、一键启动脚本
 
 ## 架构
@@ -182,6 +185,7 @@ docker compose ps
 - 订单工具权限；
 - 工单草稿、确认和幂等；
 - SSE 事件；
+- 工具开始、工具结果和最终回答的事件顺序；
 - 会话隔离和审计日志。
 
 真实 DeepSeek 联调：
