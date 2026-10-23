@@ -259,21 +259,36 @@ class SupportAgent:
         messages = self._messages(prepared.history, query)
         full_output = ""
         streamed = False
+        emitted_tool_count = 0
         with tool_context(user) as calls:
             async for event in agent.astream_events(
                 {"messages": messages},
                 version="v2",
             ):
-                if event["event"] == "on_chat_model_stream":
+                event_name = event["event"]
+                if event_name == "on_tool_start":
+                    yield {
+                        "event": "tool-start",
+                        "data": {
+                            "name": event.get("name", "unknown_tool"),
+                            "input": event["data"].get("input", {}),
+                        },
+                    }
+                elif event_name == "on_tool_end" and len(calls) > emitted_tool_count:
+                    emit_count = len(calls) - emitted_tool_count
+                    for call in calls[emitted_tool_count:]:
+                        yield {"event": "tool", "data": call}
+                    emitted_tool_count += emit_count
+                elif event_name == "on_chat_model_stream":
                     text = _message_text(event["data"].get("chunk"), strip=False)
                     if text:
                         streamed = True
                         yield {"event": "token", "data": {"text": text}}
-                elif event["event"] == "on_chat_model_end":
+                elif event_name == "on_chat_model_end":
                     text = _message_text(event["data"].get("output"))
                     if text:
                         full_output += text
-        for call in calls:
+        for call in calls[emitted_tool_count:]:
             yield {"event": "tool", "data": call}
         if full_output and not streamed:
             yield {"event": "token", "data": {"text": full_output}}
