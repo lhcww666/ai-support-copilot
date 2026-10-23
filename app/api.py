@@ -336,6 +336,8 @@ def runtime(request: Request, user: Annotated[User, Depends(current_user)]) -> d
     return {
         "app_env": settings.app_env,
         "llm_mode": "langchain-agent" if settings.llm_enabled else "offline-rule",
+        "llm_provider": settings.llm_provider,
+        "llm_model": settings.llm_model if settings.llm_enabled else None,
         "embedding_mode": "openai" if settings.embedding_api_key else "hash",
         "documents": repository.document_count(),
         "retrieval_visible": len(knowledge.list_documents(user.role)),

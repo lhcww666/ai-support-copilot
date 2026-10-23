@@ -77,8 +77,11 @@ async function enterWorkspace() {
 
 async function loadRuntime() {
   state.runtime = await api('/api/v1/runtime');
-  $('#runtimeLabel').textContent = state.runtime.llm_mode === 'langchain-agent' ? 'LangChain Agent' : 'Offline deterministic';
-  $('#llmMode').textContent = state.runtime.llm_mode === 'langchain-agent' ? 'LANGCHAIN' : 'OFFLINE';
+  const provider = String(state.runtime.llm_provider || 'openai-compatible').toUpperCase();
+  $('#runtimeLabel').textContent = state.runtime.llm_mode === 'langchain-agent'
+    ? `${provider} Agent`
+    : 'Offline deterministic';
+  $('#llmMode').textContent = state.runtime.llm_mode === 'langchain-agent' ? provider : 'OFFLINE';
   $('#embeddingMode').textContent = state.runtime.embedding_mode.toUpperCase();
   $('#visibleDocs').textContent = String(state.runtime.retrieval_visible).padStart(2, '0');
 }
