@@ -83,6 +83,7 @@ async function loadRuntime() {
     : 'Offline deterministic';
   $('#llmMode').textContent = state.runtime.llm_mode === 'langchain-agent' ? provider : 'OFFLINE';
   $('#embeddingMode').textContent = state.runtime.embedding_mode.toUpperCase();
+  $('#vectorMode').textContent = String(state.runtime.vector_store || 'memory').toUpperCase();
   $('#visibleDocs').textContent = String(state.runtime.retrieval_visible).padStart(2, '0');
 }
 
