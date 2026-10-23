@@ -30,6 +30,8 @@ class Settings:
     llm_timeout_seconds: int = 30
     llm_temperature: float = 0.1
     llm_max_tokens: int = 900
+    query_rewrite_enabled: bool = True
+    query_rewrite_max_tokens: int = 160
     embedding_api_key: str = ""
     embedding_base_url: str = "https://api.openai.com/v1"
     embedding_model: str = "text-embedding-3-small"
@@ -72,6 +74,9 @@ class Settings:
             "llm_timeout_seconds": int(os.getenv("LLM_TIMEOUT_SECONDS", "30")),
             "llm_temperature": float(os.getenv("LLM_TEMPERATURE", "0.1")),
             "llm_max_tokens": int(os.getenv("LLM_MAX_TOKENS", "900")),
+            "query_rewrite_enabled": os.getenv("QUERY_REWRITE_ENABLED", "true").lower()
+            in {"1", "true", "yes"},
+            "query_rewrite_max_tokens": int(os.getenv("QUERY_REWRITE_MAX_TOKENS", "160")),
             "embedding_api_key": os.getenv("EMBEDDING_API_KEY", ""),
             "embedding_base_url": os.getenv(
                 "EMBEDDING_BASE_URL", "https://api.openai.com/v1"
