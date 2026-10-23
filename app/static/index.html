@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Support Copilot</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-mark">SC</span>
+      <span><strong>Support Copilot</strong><small>FASTAPI · LANGCHAIN</small></span>
+    </a>
+    <div class="top-actions">
+      <span class="status-dot"><i></i><span id="runtimeLabel">连接中</span></span>
+      <button id="logoutButton" class="ghost hidden">退出</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="loginPanel" class="login-shell">
+      <div class="login-copy">
+        <p class="eyebrow">ROLE-AWARE KNOWLEDGE OPERATIONS</p>
+        <h1>让回答有依据，<br><span>让操作有边界。</span></h1>
+        <p class="lead">RAG 检索、订单工具、工单草稿和人工确认在同一个客服 Agent 中完成。模型可以调用工具，但不能绕过角色权限和确认流程。</p>
+        <div class="feature-row">
+          <span>RAG 引用</span><span>工具调用</span><span>SSE 输出</span><span>评测回滚</span>
+        </div>
+      </div>
+      <form id="loginForm" class="login-card">
+        <div class="card-heading">
+          <div><p class="eyebrow">DEMO ACCESS</p><h2>登录工作台</h2></div>
+          <span class="pill">LOCAL</span>
+        </div>
+        <label>账号<input id="username" value="admin" autocomplete="username" required></label>
+        <label>密码<input id="password" type="password" value="admin123" autocomplete="current-password" required></label>
+        <button type="submit" class="primary">进入 Copilot</button>
+        <div class="quick-login">
+          <button type="button" data-user="admin" data-password="admin123">管理员</button>
+          <button type="button" data-user="operator" data-password="operator123">客服专员</button>
+          <button type="button" data-user="viewer" data-password="viewer123">只读用户</button>
+        </div>
+        <p class="form-note">演示账号只保存在本地配置中。生产环境必须替换为正式身份认证。</p>
+      </form>
+    </section>
+
+    <section id="workspace" class="workspace hidden">
+      <aside class="sidebar">
+        <article class="panel identity">
+          <div class="avatar" id="avatar">A</div>
+          <div><p class="eyebrow">SIGNED IN</p><h2 id="userName">—</h2><span id="userRole" class="role-pill">—</span></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title"><span>运行模式</span><span class="pill">LIVE</span></div>
+          <dl class="metrics">
+            <div><dt>LLM</dt><dd id="llmMode">—</dd></div>
+            <div><dt>Embedding</dt><dd id="embeddingMode">—</dd></div>
+            <div><dt>可见文档</dt><dd id="visibleDocs">—</dd></div>
+          </dl>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title"><span>知识库</span><button id="refreshDocs" class="icon-button" title="刷新">↻</button></div>
+          <div id="documentList" class="document-list"><p class="muted">正在加载...</p></div>
+          <form id="uploadForm" class="upload-form hidden">
+            <input id="documentFile" type="file" accept=".txt,.md,.pdf" required>
+            <select id="documentVisibility">
+              <option value="internal">内部</option>
+              <option value="public">公开</option>
+              <option value="admin">管理员</option>
+            </select>
+            <button type="submit" class="secondary">上传文档</button>
+          </form>
+        </article>
+
+        <article class="panel eval-panel hidden" id="evalPanel">
+          <div class="panel-title"><span>RAG 检索评测</span><span id="evalScore" class="score">—</span></div>
+          <p class="muted">10 条固定问题，检查期望文档是否进入 Top 4。</p>
+          <button id="runEvaluation" class="secondary">运行评测</button>
+          <div id="evalSummary" class="eval-summary"></div>
+        </article>
+      </aside>
+
+      <section class="chat-shell panel">
+        <div class="chat-head">
+          <div>
+            <p class="eyebrow">SUPPORT AGENT</p>
+            <h2>知识库与业务任务</h2>
+            <p class="muted">可以问制度，也可以查询 SO-1001 或创建工单。</p>
+          </div>
+          <div class="trace-badges">
+            <span class="pill">SUPERVISOR</span>
+            <span class="pill">TOOL SAFE</span>
+          </div>
+        </div>
+
+        <div id="messages" class="messages">
+          <article class="assistant-message welcome">
+            <div class="message-label">COPILOT</div>
+            <p>你好，我可以基于你的角色检索知识库、查询订单，并把高风险写操作整理成待确认工单。</p>
+            <div class="suggestion-grid">
+              <button data-prompt="员工密码输错几次会锁定账号？">账号锁定规则</button>
+              <button data-prompt="查询订单 SO-1001 的物流状态">订单 SO-1001</button>
+              <button data-prompt="为登录失败创建高优先级工单">创建工单草稿</button>
+              <button data-prompt="退款超过 1000 元需要谁审批？">退款审批</button>
+            </div>
+          </article>
+        </div>
+
+        <form id="chatForm" class="composer">
+          <textarea id="chatInput" rows="2" maxlength="2000" placeholder="输入问题，Enter 发送，Shift + Enter 换行" required></textarea>
+          <button type="submit" id="sendButton" class="primary">发送</button>
+        </form>
+        <div id="errorBanner" class="error-banner hidden"></div>
+      </section>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
