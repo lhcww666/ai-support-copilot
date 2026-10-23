@@ -300,10 +300,10 @@ class SupportAgent:
             api_key=self.settings.llm_api_key,
             base_url=self.settings.llm_base_url,
             model=self.settings.llm_model,
-            temperature=0.1,
+            temperature=self.settings.llm_temperature,
             timeout=self.settings.llm_timeout_seconds,
             max_retries=2,
-            max_completion_tokens=900,
+            model_kwargs={"max_tokens": self.settings.llm_max_tokens},
             use_responses_api=False,
         )
         return create_agent(
