@@ -32,9 +32,13 @@ class Settings:
     llm_max_tokens: int = 900
     query_rewrite_enabled: bool = True
     query_rewrite_max_tokens: int = 160
+    embedding_provider: str = "hash"
     embedding_api_key: str = ""
     embedding_base_url: str = "https://api.openai.com/v1"
     embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 512
+    vector_store: str = "memory"
+    pgvector_dsn: str = ""
     conversation_history_limit: int = 6
     retrieval_limit: int = 4
     admin_password: str = "admin123"
@@ -77,6 +81,7 @@ class Settings:
             "query_rewrite_enabled": os.getenv("QUERY_REWRITE_ENABLED", "true").lower()
             in {"1", "true", "yes"},
             "query_rewrite_max_tokens": int(os.getenv("QUERY_REWRITE_MAX_TOKENS", "160")),
+            "embedding_provider": os.getenv("EMBEDDING_PROVIDER", "hash").strip().lower(),
             "embedding_api_key": os.getenv("EMBEDDING_API_KEY", ""),
             "embedding_base_url": os.getenv(
                 "EMBEDDING_BASE_URL", "https://api.openai.com/v1"
@@ -84,6 +89,9 @@ class Settings:
             "embedding_model": os.getenv(
                 "EMBEDDING_MODEL", "text-embedding-3-small"
             ),
+            "embedding_dimensions": int(os.getenv("EMBEDDING_DIMENSIONS", "512")),
+            "vector_store": os.getenv("VECTOR_STORE", "memory").strip().lower(),
+            "pgvector_dsn": os.getenv("PGVECTOR_DSN", ""),
             "conversation_history_limit": int(
                 os.getenv("CONVERSATION_HISTORY_LIMIT", "6")
             ),
