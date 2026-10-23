@@ -44,6 +44,9 @@ class ToolCallResponse(BaseModel):
 
 class ChatResponse(BaseModel):
     conversation_id: str
+    original_query: str
+    retrieval_query: str
+    query_rewritten: bool
     answer: str
     sources: list[SourceResponse]
     tool_calls: list[ToolCallResponse]

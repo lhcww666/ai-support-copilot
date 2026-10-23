@@ -14,6 +14,7 @@ from langchain_openai import ChatOpenAI
 from app.config import Settings
 from app.knowledge import KnowledgeService, RetrievedChunk
 from app.orders import OrderService
+from app.query_rewrite import QueryRewriteService
 from app.repositories import SqliteRepository
 from app.security import User
 from app.tickets import TicketService
@@ -28,6 +29,9 @@ URGENT_WORDS = ("紧急", "高优先", "盗号", "数据泄露", "监管投诉")
 @dataclass(slots=True)
 class ChatResult:
     conversation_id: str
+    original_query: str
+    retrieval_query: str
+    query_rewritten: bool
     answer: str
     sources: list[RetrievedChunk]
     tool_calls: list[dict[str, Any]]
@@ -40,6 +44,9 @@ class PreparedChat:
     conversation_id: str
     history: list[dict[str, str]]
     sources: list[RetrievedChunk]
+    original_query: str
+    retrieval_query: str
+    query_rewritten: bool
 
 
 class SupportAgent:
@@ -51,6 +58,7 @@ class SupportAgent:
         order_service: OrderService,
         ticket_service: TicketService,
         model_factory: Callable[[], Any] | None = None,
+        query_rewriter: QueryRewriteService | None = None,
     ) -> None:
         self.settings = settings
         self.repository = repository
@@ -59,6 +67,7 @@ class SupportAgent:
         self.ticket_service = ticket_service
         self.tools = build_tools(order_service, ticket_service)
         self.model_factory = model_factory
+        self.query_rewriter = query_rewriter or QueryRewriteService(settings)
 
     async def chat(
         self,
@@ -66,7 +75,7 @@ class SupportAgent:
         query: str,
         conversation_id: str | None = None,
     ) -> ChatResult:
-        prepared = self._prepare_chat(user, query, conversation_id)
+        prepared = await self._prepare_chat(user, query, conversation_id)
 
         fallback = False
         if self.settings.llm_enabled:
@@ -94,9 +103,13 @@ class SupportAgent:
             tool_calls,
             planner,
             fallback,
+            prepared.query_rewritten,
         )
         return ChatResult(
             conversation_id=prepared.conversation_id,
+            original_query=prepared.original_query,
+            retrieval_query=prepared.retrieval_query,
+            query_rewritten=prepared.query_rewritten,
             answer=answer,
             sources=display_sources,
             tool_calls=tool_calls,
@@ -113,6 +126,7 @@ class SupportAgent:
         tool_calls: list[dict[str, Any]],
         planner: str,
         fallback: bool,
+        query_rewritten: bool,
     ) -> None:
         self.repository.add_message(
             conversation_id,
@@ -130,10 +144,11 @@ class SupportAgent:
                 "fallback": fallback,
                 "source_count": len(sources),
                 "tool_count": len(tool_calls),
+                "query_rewritten": query_rewritten,
             },
         )
 
-    def _prepare_chat(
+    async def _prepare_chat(
         self,
         user: User,
         query: str,
@@ -146,16 +161,28 @@ class SupportAgent:
             user.username,
             self.settings.conversation_history_limit,
         )
+        rewrite = await self.query_rewriter.rewrite(query, history)
         offline_tool_only = not self.settings.llm_enabled and (
             bool(ORDER_PATTERN.search(query)) or _is_ticket_intent(query)
         )
         sources = (
             []
             if offline_tool_only
-            else self.knowledge.search(query, user.role, self.settings.retrieval_limit)
+            else self.knowledge.search(
+                rewrite.query,
+                user.role,
+                self.settings.retrieval_limit,
+            )
         )
         self.repository.add_message(resolved_id, user.username, "user", query)
-        return PreparedChat(resolved_id, history, sources)
+        return PreparedChat(
+            resolved_id,
+            history,
+            sources,
+            rewrite.original_query,
+            rewrite.query,
+            rewrite.rewritten,
+        )
 
     async def stream(
         self,
@@ -163,7 +190,7 @@ class SupportAgent:
         query: str,
         conversation_id: str | None = None,
     ):
-        prepared = self._prepare_chat(user, query, conversation_id)
+        prepared = await self._prepare_chat(user, query, conversation_id)
         planner = "langchain-agent" if self.settings.llm_enabled else "local-rule"
         yield {
             "event": "meta",
@@ -171,6 +198,8 @@ class SupportAgent:
                 "conversation_id": prepared.conversation_id,
                 "planner": planner,
                 "fallback": False,
+                "retrieval_query": prepared.retrieval_query,
+                "query_rewritten": prepared.query_rewritten,
             },
         }
         yield {
@@ -199,6 +228,8 @@ class SupportAgent:
                             "conversation_id": prepared.conversation_id,
                             "planner": planner,
                             "fallback": True,
+                            "retrieval_query": prepared.retrieval_query,
+                            "query_rewritten": prepared.query_rewritten,
                         },
                     }
                     yield {"event": "token", "data": {"text": answer}}
@@ -219,6 +250,8 @@ class SupportAgent:
                             "conversation_id": prepared.conversation_id,
                             "planner": planner,
                             "fallback": True,
+                            "retrieval_query": prepared.retrieval_query,
+                            "query_rewritten": prepared.query_rewritten,
                         },
                     }
                     for call in tool_calls:
@@ -246,6 +279,7 @@ class SupportAgent:
             tool_calls,
             planner,
             fallback,
+            prepared.query_rewritten,
         )
         yield {"event": "done", "data": {"ok": True}}
 

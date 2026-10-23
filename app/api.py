@@ -101,6 +101,9 @@ async def chat(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return ChatResponse(
         conversation_id=result.conversation_id,
+        original_query=result.original_query,
+        retrieval_query=result.retrieval_query,
+        query_rewritten=result.query_rewritten,
         answer=result.answer,
         sources=[
             {
