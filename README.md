@@ -106,6 +106,9 @@ LLM_BASE_URL=https://api.deepseek.com/v1
 LLM_MODEL=deepseek-chat
 ```
 
+`.env`、`.env.local` 等本地环境文件已加入 `.gitignore`。不要执行
+`git add -f .env`，也不要把 Key 粘贴到 README、Issue、聊天或测试代码中。
+
 配置 `LLM_API_KEY` 后，聊天会切换到 LangChain `create_agent`。模型调用失败时自动降级为
 `local-rule-fallback`，不会把异常直接暴露给前端。
 
