@@ -12,7 +12,7 @@
 ## 自动化测试
 
 ```text
-pytest：24 passed
+pytest：27 passed
 ruff check：通过
 浏览器交互：26/26 通过
 ```
@@ -33,6 +33,7 @@ ruff check：通过
 - LangChain `create_agent` 的模拟工具调用循环；
 - LangChain 流式事件输出与消息去重；
 - LangChain 工具开始与工具结果事件顺序；
+- 多轮追问查询改写与开关控制；
 - DeepSeek 与自定义 OpenAI-Compatible 供应商配置解析；
 - RAG 固定评测 10/10。
 
@@ -80,6 +81,15 @@ DeepSeek 配置浏览器验证：
 - 浏览器显示 `RUNNING · query_order_status` 和
   `SUCCESS · query_order_status`；
 - 浏览器 8/8 断言通过，截图保存在 `docs/tool-streaming.png`。
+
+真实多轮查询改写验证：
+
+- 第一轮问题“退款超过 1000 元怎么处理？”不触发改写；
+- 第二轮问题“那定制商品呢？”被改写为
+  “定制商品退款金额超过 1000 元时如何处理，是否需要客服主管审批并升级到人工专家？”；
+- 第二轮命中“退款与售后规则”，`fallback=false`；
+- 浏览器显示 `QUERY REWRITTEN`，8/8 断言通过；
+- 截图保存在 `docs/query-rewrite.png`。
 
 ## 尚未验证
 
