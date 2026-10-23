@@ -4,6 +4,7 @@ from app.config import PROJECT_ROOT, Settings
 
 
 def test_deepseek_provider_uses_openai_compatible_defaults(monkeypatch, tmp_path):
+    monkeypatch.setattr("app.config.load_dotenv", lambda *args, **kwargs: None)
     for name in ("LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL"):
         monkeypatch.delenv(name, raising=False)
 
@@ -20,6 +21,7 @@ def test_deepseek_provider_uses_openai_compatible_defaults(monkeypatch, tmp_path
 
 
 def test_unknown_provider_falls_back_to_compatible_defaults(monkeypatch, tmp_path):
+    monkeypatch.setattr("app.config.load_dotenv", lambda *args, **kwargs: None)
     for name in ("LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL"):
         monkeypatch.delenv(name, raising=False)
 
