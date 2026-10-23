@@ -56,6 +56,9 @@ app/
 
 工具使用 `ContextVar` 恢复当前用户，不让模型直接传递用户身份或 Token。
 
+模型层支持 OpenAI-Compatible 供应商配置。`LLM_PROVIDER=deepseek` 时默认使用
+`https://api.deepseek.com/v1` 和 `deepseek-chat`；Embedding 供应商单独配置。
+
 ## 写操作安全
 
 ```text

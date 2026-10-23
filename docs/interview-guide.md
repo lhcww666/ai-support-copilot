@@ -10,7 +10,7 @@
 - Python 3.13、FastAPI、Pydantic、SSE
 - LangChain 1.x、LangChain Core、LangChain OpenAI
 - RecursiveCharacterTextSplitter、Embeddings、InMemoryVectorStore
-- Tool Calling、`create_agent`、离线规则降级
+- Tool Calling、`create_agent`、DeepSeek/OpenAI-Compatible 适配、离线规则降级
 - SQLite、Docker、GitHub Actions、Pytest、Ruff
 
 ## 可写进简历的要点

@@ -12,7 +12,7 @@
 ## 自动化测试
 
 ```text
-pytest：21 passed
+pytest：23 passed
 ruff check：通过
 浏览器交互：26/26 通过
 ```
@@ -32,6 +32,7 @@ ruff check：通过
 - 操作审计；
 - LangChain `create_agent` 的模拟工具调用循环；
 - LangChain 流式事件输出与消息去重；
+- DeepSeek 与自定义 OpenAI-Compatible 供应商配置解析；
 - RAG 固定评测 10/10。
 
 工程验证：
@@ -53,6 +54,13 @@ ruff check：通过
 - 客服角色可见 4 篇文档，不显示管理功能；
 - 所有 API 请求均为 HTTP 200，无 JavaScript 异常；
 - 截图保存在 `docs/ui-dashboard.png`。
+
+DeepSeek 配置浏览器验证：
+
+- 使用 `LLM_PROVIDER=deepseek` 启动；
+- 页面运行模式显示 `DEEPSEEK` 和 `DEEPSEEK Agent`；
+- 登录、文档和运行状态接口均为 HTTP 200；
+- 无 JavaScript 异常，5/5 断言通过。
 
 ## 尚未验证
 

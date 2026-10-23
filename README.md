@@ -23,7 +23,7 @@
 - 工单草稿工具 + 人工确认 + 数据库幂等
 - 对话历史、消息持久化、操作审计
 - 10 条固定 RAG 检索评测
-- 21 个自动化测试、Ruff 检查和 GitHub Actions
+- 23 个自动化测试、Ruff 检查和 GitHub Actions
 - Docker Compose、一键启动脚本
 
 ## 架构
@@ -90,27 +90,28 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-dev.ps1
 - 使用本地规则完成订单、工单和知识库路由；
 - 所有 API、权限、持久化和 UI 均可验证。
 
-接入 OpenAI-Compatible 模型：
+接入 DeepSeek：
 
 ```powershell
-Copy-Item .env.example .env
+Copy-Item .env.deepseek.example .env
 ```
 
-编辑 `.env`：
+编辑 `.env`，只在本机填写 Key：
 
 ```dotenv
 APP_SECRET=至少32位随机字符串
+LLM_PROVIDER=deepseek
 LLM_API_KEY=你的模型Key
-LLM_BASE_URL=https://api.openai.com/v1
-LLM_MODEL=gpt-4o-mini
-
-EMBEDDING_API_KEY=你的EmbeddingKey
-EMBEDDING_BASE_URL=https://api.openai.com/v1
-EMBEDDING_MODEL=text-embedding-3-small
+LLM_BASE_URL=https://api.deepseek.com/v1
+LLM_MODEL=deepseek-chat
 ```
 
 配置 `LLM_API_KEY` 后，聊天会切换到 LangChain `create_agent`。模型调用失败时自动降级为
 `local-rule-fallback`，不会把异常直接暴露给前端。
+
+Agent 和 Tool Calling 建议使用 `deepseek-chat`。DeepSeek 聊天 Key 不应默认当作
+Embedding Key；没有单独 Embedding 服务时，继续使用离线哈希向量即可。需要真实语义检索时，
+再配置任意 OpenAI-Compatible Embedding 服务和 `EMBEDDING_*` 参数。
 
 ## 主要接口
 
