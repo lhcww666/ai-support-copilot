@@ -12,7 +12,7 @@
 ## 自动化测试
 
 ```text
-pytest：20 passed
+pytest：21 passed
 ruff check：通过
 浏览器交互：26/26 通过
 ```
@@ -31,6 +31,7 @@ ruff check：通过
 - 会话所有权；
 - 操作审计；
 - LangChain `create_agent` 的模拟工具调用循环；
+- LangChain 流式事件输出与消息去重；
 - RAG 固定评测 10/10。
 
 工程验证：

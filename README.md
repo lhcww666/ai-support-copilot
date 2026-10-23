@@ -11,7 +11,7 @@
 
 ## 功能
 
-- FastAPI REST + SSE 流式事件接口
+- FastAPI REST + SSE；配置模型后使用 LangChain Token 级流式输出
 - 内置管理员、客服专员、只读用户三种角色
 - HMAC 签名 Token、接口权限和文档可见范围
 - LangChain `RecursiveCharacterTextSplitter` 文档切分
@@ -23,7 +23,7 @@
 - 工单草稿工具 + 人工确认 + 数据库幂等
 - 对话历史、消息持久化、操作审计
 - 10 条固定 RAG 检索评测
-- 20 个自动化测试、Ruff 检查和 GitHub Actions
+- 21 个自动化测试、Ruff 检查和 GitHub Actions
 - Docker Compose、一键启动脚本
 
 ## 架构
@@ -186,7 +186,7 @@ docker compose ps
 - SQLite 适合单实例作品集，不适合直接作为高并发生产部署；
 - 默认向量索引在启动时构建，生产应切换 pgvector、Qdrant 或 Milvus；
 - HMAC Token 和演示账号用于说明认证边界，生产应接入 OIDC/OAuth2；
-- 当前 SSE 按消息块推送完整 Agent 结果；配置真实模型后可以继续扩展为模型 Token 级流式输出；
+- 离线模式按固定消息块推送；配置真实模型后使用 LangChain `astream_events` 推送模型 Token；
 - 没有实现多 Agent 自由协作，当前单 Agent + 工具更符合这个业务规模。
 
 详细设计见 [docs/architecture.md](docs/architecture.md)，验证记录见
