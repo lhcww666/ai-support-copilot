@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import re
 import threading
 from dataclasses import dataclass
@@ -13,7 +14,9 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import Settings
 from app.embeddings import HashEmbeddings, text_tokens
+from app.pgvector_store import PgVectorStore
 from app.repositories import SqliteRepository
+from app.tei_embeddings import TeiEmbeddings
 
 VISIBILITY_LEVEL = {"public": 1, "internal": 2, "admin": 3}
 ROLE_LEVEL = {"viewer": 1, "operator": 2, "admin": 3}
@@ -29,14 +32,24 @@ class RetrievedChunk:
 
 
 def build_embeddings(settings: Settings) -> Embeddings:
-    if settings.embedding_api_key.strip():
+    provider = settings.embedding_provider
+    if provider == "tei":
+        return TeiEmbeddings(
+            base_url=settings.embedding_base_url,
+            dimensions=settings.embedding_dimensions,
+            timeout_seconds=settings.llm_timeout_seconds,
+        )
+    if provider == "openai" and settings.embedding_api_key.strip():
         return OpenAIEmbeddings(
             api_key=settings.embedding_api_key,
             base_url=settings.embedding_base_url,
             model=settings.embedding_model,
             timeout=settings.llm_timeout_seconds,
+            dimensions=settings.embedding_dimensions,
         )
-    return HashEmbeddings()
+    if provider == "hash":
+        return HashEmbeddings(dimensions=settings.embedding_dimensions)
+    raise ValueError(f"不支持的 Embedding 供应商: {provider}")
 
 
 class KnowledgeService:
@@ -54,29 +67,37 @@ class KnowledgeService:
             chunk_overlap=70,
             separators=["\n\n", "\n", "。", "！", "？", "；", " ", ""],
         )
-        self._vectorstore = InMemoryVectorStore(embedding=self.embeddings)
+        self._memory_store = InMemoryVectorStore(embedding=self.embeddings)
+        self._pg_store: PgVectorStore | None = None
+        if settings.vector_store == "pgvector":
+            self._pg_store = PgVectorStore(
+                dsn=settings.pgvector_dsn,
+                embeddings=self.embeddings,
+                dimensions=settings.embedding_dimensions,
+            )
+        elif settings.vector_store != "memory":
+            raise ValueError(f"不支持的向量存储: {settings.vector_store}")
         self._lock = threading.RLock()
+
+    def initialize(self) -> None:
+        if self._pg_store:
+            self._pg_store.ensure_schema()
+            if self._pg_store.count() == 0:
+                self.refresh()
+        else:
+            self.refresh()
 
     def refresh(self) -> None:
         with self._lock:
-            documents: list[Document] = []
-            for item in self.repository.list_documents(set(VISIBILITY_LEVEL)):
-                for index, chunk in enumerate(self.splitter.split_text(item["content"])):
-                    documents.append(
-                        Document(
-                            page_content=chunk,
-                            metadata={
-                                "document_id": item["id"],
-                                "title": item["title"],
-                                "visibility": item["visibility"],
-                                "chunk_index": index,
-                            },
-                        )
-                    )
-            self._vectorstore = InMemoryVectorStore.from_documents(
-                documents=documents,
-                embedding=self.embeddings,
-            )
+            documents = self._all_documents()
+            if self._pg_store:
+                self._pg_store.clear()
+                self._pg_store.add_documents(documents)
+            else:
+                self._memory_store = InMemoryVectorStore.from_documents(
+                    documents=documents,
+                    embedding=self.embeddings,
+                )
 
     def add_document(
         self,
@@ -91,12 +112,32 @@ class KnowledgeService:
             visibility=visibility,
             created_by=created_by,
         )
-        self.refresh()
+        try:
+            if self._pg_store:
+                self._pg_store.add_documents(
+                    self._split_document(
+                        {
+                            "id": document_id,
+                            "title": title,
+                            "content": content,
+                            "visibility": visibility,
+                        }
+                    )
+                )
+            else:
+                self.refresh()
+        except Exception:
+            self.repository.delete_document(document_id)
+            raise
         return document_id
 
     def delete_document(self, document_id: str) -> bool:
-        deleted = self.repository.delete_document(document_id)
-        if deleted:
+        if self._pg_store:
+            self._pg_store.delete_document(document_id)
+            deleted = self.repository.delete_document(document_id)
+        else:
+            deleted = self.repository.delete_document(document_id)
+        if deleted and not self._pg_store:
             self.refresh()
         return deleted
 
@@ -109,13 +150,20 @@ class KnowledgeService:
         limit = limit or self.settings.retrieval_limit
         query_tokens = text_tokens(query)
         with self._lock:
-            matches = self._vectorstore.similarity_search_with_score(
-                query,
-                k=max(limit * 8, 24),
-                filter=lambda doc: _role_can_read(
-                    role, str(doc.metadata.get("visibility", "admin"))
-                ),
-            )
+            if self._pg_store:
+                matches = self._pg_store.similarity_search_with_score(
+                    query,
+                    k=max(limit * 8, 24),
+                    visibilities=_visible_levels(role),
+                )
+            else:
+                matches = self._memory_store.similarity_search_with_score(
+                    query,
+                    k=max(limit * 8, 24),
+                    filter=lambda doc: _role_can_read(
+                        role, str(doc.metadata.get("visibility", "admin"))
+                    ),
+                )
 
         ranked: list[RetrievedChunk] = []
         for document, vector_score in matches:
@@ -148,6 +196,34 @@ class KnowledgeService:
             if len(best_by_document) >= limit:
                 break
         return list(best_by_document.values())
+
+    async def asearch(
+        self,
+        query: str,
+        role: str,
+        limit: int | None = None,
+    ) -> list[RetrievedChunk]:
+        return await asyncio.to_thread(self.search, query, role, limit)
+
+    def _all_documents(self) -> list[Document]:
+        documents: list[Document] = []
+        for item in self.repository.list_documents(set(VISIBILITY_LEVEL)):
+            documents.extend(self._split_document(item))
+        return documents
+
+    def _split_document(self, item: dict[str, Any]) -> list[Document]:
+        return [
+            Document(
+                page_content=chunk,
+                metadata={
+                    "document_id": item["id"],
+                    "title": item["title"],
+                    "visibility": item["visibility"],
+                    "chunk_index": index,
+                },
+            )
+            for index, chunk in enumerate(self.splitter.split_text(item["content"]))
+        ]
 
 
 def _visible_levels(role: str) -> set[str]:

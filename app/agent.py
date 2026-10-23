@@ -168,7 +168,7 @@ class SupportAgent:
         sources = (
             []
             if offline_tool_only
-            else self.knowledge.search(
+            else await self.knowledge.asearch(
                 rewrite.query,
                 user.role,
                 self.settings.retrieval_limit,

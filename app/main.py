@@ -29,7 +29,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def lifespan(app: FastAPI):
         repository.initialize()
         seed_documents(repository, resolved.seed_dir)
-        knowledge.refresh()
+        knowledge.initialize()
         yield
 
     application = FastAPI(
